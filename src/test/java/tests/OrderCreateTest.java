@@ -4,6 +4,7 @@ import api.model.Order;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -13,6 +14,11 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 
 public class OrderCreateTest extends BaseTest {
+
+    @Before
+    public void createUserForTests() {
+        accessToken = userClient.register(user).extract().path("accessToken");
+    }
 
     private List<String> getTwoIngredients() {
         ValidatableResponse ingredientsResponse = orderClient.getIngredients();
@@ -28,7 +34,6 @@ public class OrderCreateTest extends BaseTest {
     @DisplayName("Создание заказа с авторизацией и ингредиентами")
     @Description("Проверяем успешное создание заказа авторизованным пользователем")
     public void createOrderWithAuthAndIngredients() {
-        accessToken = userClient.register(user).extract().path("accessToken");
         Order order = new Order(getTwoIngredients());
 
         ValidatableResponse response = orderClient.create(accessToken, order);
@@ -57,7 +62,6 @@ public class OrderCreateTest extends BaseTest {
     @DisplayName("Создание заказа без ингредиентов")
     @Description("Проверяем, что без ингредиентов вернётся ошибка")
     public void createOrderWithoutIngredients() {
-        accessToken = userClient.register(user).extract().path("accessToken");
         Order order = new Order(new ArrayList<>());
 
         ValidatableResponse response = orderClient.create(accessToken, order);
@@ -72,7 +76,6 @@ public class OrderCreateTest extends BaseTest {
     @DisplayName("Создание заказа с неверным хешем ингредиентов")
     @Description("Проверяем, что с неверным хешем возвращается ошибка сервера")
     public void createOrderWithInvalidIngredients() {
-        accessToken = userClient.register(user).extract().path("accessToken");
         List<String> invalidIds = new ArrayList<>();
         invalidIds.add("invalid_hash_1");
         invalidIds.add("invalid_hash_2");

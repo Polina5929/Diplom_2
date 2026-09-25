@@ -4,6 +4,7 @@ import api.model.User;
 import io.qameta.allure.Description;
 import io.qameta.allure.junit4.DisplayName;
 import io.restassured.response.ValidatableResponse;
+import org.junit.Before;
 import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
@@ -11,13 +12,15 @@ import static org.hamcrest.Matchers.notNullValue;
 
 public class UserLoginTest extends BaseTest {
 
+    @Before
+    public void createUserForTests() {
+        accessToken = userClient.register(user).extract().path("accessToken");
+    }
+
     @Test
     @DisplayName("Авторизация существующего пользователя")
     @Description("Проверяем, что пользователь может войти с валидными данными")
     public void loginExistingUser() {
-        ValidatableResponse registerResponse = userClient.register(user);
-        accessToken = registerResponse.extract().path("accessToken");
-
         ValidatableResponse loginResponse = userClient.login(user);
 
         loginResponse
@@ -30,13 +33,24 @@ public class UserLoginTest extends BaseTest {
     }
 
     @Test
-    @DisplayName("Авторизация с неверным логином и паролем")
-    @Description("Проверяем, что при неверных данных возвращается ошибка")
-    public void loginWithWrongCredentials() {
-        userClient.register(user).extract().path("accessToken");
-        accessToken = userClient.login(user).extract().path("accessToken");
+    @DisplayName("Авторизация с неверным логином")
+    @Description("Проверяем, что при неверном логине возвращается ошибка")
+    public void loginWithWrongLogin() {
+        User wrongUser = new User("wrong_" + user.getEmail(), user.getPassword(), user.getName());
 
-        User wrongUser = new User("wrong_" + user.getEmail(), "wrong_password", user.getName());
+        ValidatableResponse loginResponse = userClient.login(wrongUser);
+
+        loginResponse
+                .statusCode(401)
+                .body("success", equalTo(false))
+                .body("message", equalTo("email or password are incorrect"));
+    }
+
+    @Test
+    @DisplayName("Авторизация с неверным паролем")
+    @Description("Проверяем, что при неверном пароле возвращается ошибка")
+    public void loginWithWrongPassword() {
+        User wrongUser = new User(user.getEmail(), "wrong_password", user.getName());
 
         ValidatableResponse loginResponse = userClient.login(wrongUser);
 
